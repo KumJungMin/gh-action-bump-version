@@ -1,5 +1,5 @@
 const { existsSync } = require('fs');
-const { rm, mkdir, copyFile, stat } = require('fs/promises');
+const { rm, mkdir, copyFile, stat } = require('fs').promises;
 const { chdir, cwd } = require('process');
 const { resolve, join, dirname } = require('path');
 const exec = require('./exec');
