@@ -31,12 +31,12 @@ const workspace = process.env.GITHUB_WORKSPACE;
   if (isVersionBump) return exitSuccess('No action necessary because we found a previous bump!');
 
   // input wordings for MAJOR, MINOR, PATCH, PRE-RELEASE
-  const majorWords = process.env['INPUT_MAJOR-WORDING'];
-  const minorWords = process.env['INPUT_MINOR-WORDING'];
+  const majorWords = process.env['INPUT_MAJOR-WORDING'] ? process.env['INPUT_MAJOR-WORDING'].split(',') : '';
+  const minorWords = process.env['INPUT_MINOR-WORDING'] ? process.env['INPUT_MINOR-WORDING'].split(',') : '';
 
   // patch is by default empty, and '' would always be true in the includes(''), thats why we handle it separately
-  const patchWords = process.env['INPUT_PATCH-WORDING'] || null;
-  const preReleaseWords = process.env['INPUT_RC-WORDING'] || null;
+  const patchWords = process.env['INPUT_PATCH-WORDING'] ? process.env['INPUT_PATCH-WORDING'].split(',') : null;
+  const preReleaseWords = process.env['INPUT_RC-WORDING'] ? process.env['INPUT_RC-WORDING'].split(',') : null;
 
   console.log('config words:', { majorWords, minorWords, patchWords, preReleaseWords });
 
@@ -47,22 +47,22 @@ const workspace = process.env.GITHUB_WORKSPACE;
   let preid = process.env.INPUT_PREID;
   const majorDefaultRegex = /^([a-zA-Z]+)(\(.+\))?(\!)\:/;
   // case: if wording for MAJOR found
-  if (majorDefaultRegex.test(message) || majorWords.some((word) => word.test(message))) {
+  if (majorDefaultRegex.test(message) || majorWords.some((word) => new RegExp(word).test(message))) {
     version = 'major';
   }
   // case: if wording for MINOR found
-  else if (minorWords.some((word) => word.test(message))) {
+  else if (minorWords.some((word) => new RegExp(word).test(message))) {
     version = 'minor';
   }
   // case: if wording for PATCH found
-  else if (patchWords.some((word) => word.test(message))) {
+  else if (patchWords.some((word) => new RegExp(word).test(message))) {
     version = 'patch';
   }
   // case: if wording for PRE-RELEASE found
   else if (
     preReleaseWords &&
     preReleaseWords.some((word) => {
-      if (word.test(message)) {
+      if (new RegExp(word).test(message)) {
         foundWord = word;
         return true;
       } else return false;
@@ -78,7 +78,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
   // rc-wording is also set
   // and does not include any of rc-wording
   // then unset it and do not run
-  if (version === 'prerelease' && preReleaseWords && !preReleaseWords.some((word) => word.test(message))) {
+  if (version === 'prerelease' && preReleaseWords && !preReleaseWords.some((word) => new RegExp(word).test(message))) {
     version = null;
   }
 
@@ -110,7 +110,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
       'user.email',
       `"${process.env.GITHUB_EMAIL || 'gh-action-bump-version@users.noreply.github.com'}"`,
     ]);
-    const beforeCommits = process.env['INPUT_COMMIT_BEFORE'] || [];
+    const beforeCommits = process.env['INPUT_COMMIT_BEFORE']?  process.env['INPUT_COMMIT_BEFORE'].split(',') || null;
     let currentBranch = /refs\/[a-zA-Z]+\/(.*)/.exec(process.env.GITHUB_REF)[1];
     let isPullRequest = false;
     if (process.env.GITHUB_HEAD_REF) {
