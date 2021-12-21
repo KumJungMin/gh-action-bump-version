@@ -1,4 +1,4 @@
-name: Bump Version (Skip Commit)
+name: Bump Version
 'on':
   push: null
 jobs:
@@ -10,5 +10,3 @@ jobs:
         uses: ./action
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          skip-commit: true

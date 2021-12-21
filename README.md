@@ -2,7 +2,7 @@
 ## .github/workflows/push.yml
 ```YAML
 |
-  name: Bump Version (Skip Commit)
+  name: Bump Version
   'on':
     push: null
   jobs:
@@ -14,12 +14,9 @@
           uses: ./action
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            skip-commit: true
 
 ```
 ## Message
 no keywords
 ## Expectation
-- **Version:** 4.1.4
-- **Message:** ci: version bump to 4.1.3
+- **Version:** 1.0.1
