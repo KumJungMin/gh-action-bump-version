@@ -22,7 +22,7 @@ jobs:
         uses: 'KumJungMin/gh-action-bump-version@master'
         with:
           tag-prefix: 'v'
-          before-commit: ['npm test']
+          commit-before: ['npm test']
           commit-message: 'Release Version {{version}}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
