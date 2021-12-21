@@ -38,7 +38,9 @@ const workspace = process.env.GITHUB_WORKSPACE;
   const patchWords = process.env['INPUT_PATCH-WORDING'] ? process.env['INPUT_PATCH-WORDING'].split(',') : null;
   const preReleaseWords = process.env['INPUT_RC-WORDING'] ? process.env['INPUT_RC-WORDING'].split(',') : null;
 
-  console.log('config words:', { majorWords, minorWords, patchWords, preReleaseWords });
+  const beforeCommits = process.env['INPUT_COMMIT_BEFORE'] ? process.env['INPUT_COMMIT_BEFORE'].split(',') : null;
+
+  console.log('config words:', { majorWords, minorWords, patchWords, preReleaseWords, beforeCommits });
 
   // get default version bump
   let version = process.env.INPUT_DEFAULT;
@@ -123,7 +125,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
       'user.email',
       `"${process.env.GITHUB_EMAIL || 'gh-action-bump-version@users.noreply.github.com'}"`,
     ]);
-    const beforeCommits = process.env['INPUT_COMMIT_BEFORE'] ? process.env['INPUT_COMMIT_BEFORE'].split(',') : null;
+
     let currentBranch = /refs\/[a-zA-Z]+\/(.*)/.exec(process.env.GITHUB_REF)[1];
     let isPullRequest = false;
     if (process.env.GITHUB_HEAD_REF) {
