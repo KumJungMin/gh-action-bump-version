@@ -252,5 +252,5 @@ function runInWorkspace(command, args) {
 function testRegex(text, regexStr) {
   const parts = /\/(.*)\/(.*)/.exec(regexStr);
   const regex = new RegExp(parts[1], parts[2]);
-  return text.test(regex);
+  return regex.test(text);
 }
