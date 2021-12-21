@@ -143,7 +143,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
     let newVersion = execSync(`npm version --git-tag-version=false ${version}`).toString().trim().replace(/^v/, '');
     newVersion = `${tagPrefix}${newVersion}`;
     if (process.env['INPUT_SKIP-COMMIT'] !== 'true') {
-      if (beforeCommits.length) {
+      if (beforeCommits) {
         for (let commit of beforeCommits) {
           const commits = commit.split(' ');
           const args = commits.slice(1);
@@ -167,7 +167,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
     try {
       // to support "actions/checkout@v1"
       if (process.env['INPUT_SKIP-COMMIT'] !== 'true') {
-        if (beforeCommits.length) {
+        if (beforeCommits) {
           for (let commit of beforeCommits) {
             const commits = commit.split(' ');
             const args = commits.slice(1);
