@@ -26,7 +26,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
   const commitMessage = process.env['INPUT_COMMIT-MESSAGE'] || 'ci: version bump to {{version}}';
   console.log('commit message:', message);
   const commitMessageRegex = new RegExp(commitMessage.replace(/{{version}}/g, `${tagPrefix}\\d+\\.\\d+\\.\\d+`), 'ig');
-  const isVersionBump = message.find((message) => commitMessageRegex.test(message)) !== undefined;
+  const isVersionBump = commitMessageRegex.test(message) !== undefined;
 
   if (isVersionBump) return exitSuccess('No action necessary because we found a previous bump!');
 
