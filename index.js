@@ -28,18 +28,20 @@ const workspace = process.env.GITHUB_WORKSPACE;
   const commitMessageRegex = new RegExp(commitMessage.replace(/{{version}}/g, `${tagPrefix}\\d+\\.\\d+\\.\\d+`), 'ig');
   const isVersionBump = messages.find((message) => commitMessageRegex.test(message)) !== undefined;
 
-  if (isVersionBump) return exitSuccess('No action necessary because we found a previous bump!');
+  if (isVersionBump) {
+    return exitSuccess('No action necessary because we found a previous bump!');
+  }
 
   // input wordings for MAJOR, MINOR, PATCH, PRE-RELEASE
-  const majorWords = process.env['INPUT_MAJOR-WORDING'].split(',');
-  const minorWords = process.env['INPUT_MINOR-WORDING'].split(',');
+  const majorWord = process.env['INPUT_MAJOR-WORDING'];
+  const minorWord = process.env['INPUT_MINOR-WORDING'];
   // patch is by default empty, and '' would always be true in the includes(''), thats why we handle it separately
-  const patchWords = process.env['INPUT_PATCH-WORDING'] ? process.env['INPUT_PATCH-WORDING'].split(',') : null;
-  const preReleaseWords = process.env['INPUT_RC-WORDING'] ? process.env['INPUT_RC-WORDING'].split(',') : null;
+  const patchWord = process.env['INPUT_PATCH-WORDING'] || null;
+  const preReleaseWord = process.env['INPUT_RC-WORDING'] || null;
 
   const beforeCommits = process.env['INPUT_COMMIT-BEFORE'] ? process.env['INPUT_COMMIT-BEFORE'].split(',') : null;
 
-  console.log('config words:', { majorWords, minorWords, patchWords, preReleaseWords, beforeCommits });
+  console.log('config words:', { majorWord, minorWord, patchWord, preReleaseWord, beforeCommits });
 
   // get default version bump
   let version = process.env.INPUT_DEFAULT;
@@ -47,40 +49,31 @@ const workspace = process.env.GITHUB_WORKSPACE;
   // get the pre-release prefix specified in action
   let preid = process.env.INPUT_PREID;
 
-  // case: if wording for MAJOR found
   const majorDefaultRegex = /^([a-zA-Z]+)(\(.+\))?(\!)\:/;
 
-  if (
-    messages.some(
-      (message) => majorDefaultRegex.test(message) || majorWords.some((word) => new RegExp(word).test(message)),
-    )
-  ) {
-    version = 'major';
-  }
-  // case: if wording for MINOR found
-  else if (messages.some((message) => minorWords.some((word) => new RegExp(word).test(message)))) {
-    version = 'minor';
-  }
-  // case: if wording for PATCH found
-  else if (patchWords && messages.some((message) => patchWords.some((word) => new RegExp(word).test(message)))) {
-    version = 'patch';
-  }
-  // case: if wording for PRE-RELEASE found
-  else if (
-    preReleaseWords &&
-    messages.some((message) =>
-      preReleaseWords.some((word) => {
-        if (new RegExp(word).test(message)) {
-          foundWord = word;
-          return true;
-        } else {
-          return false;
-        }
-      }),
-    )
-  ) {
-    preid = foundWord.split('-')[1];
-    version = 'prerelease';
+  // message check with word
+  const matchMajorWord = messages.some((message) => {
+    return majorDefaultRegex.test(message) || matchPattern(message, majorWord);
+  });
+  const matchMinorWord = messages.some((message) => {
+    return matchPattern(message, minorWord);
+  });
+  const matchPatchWord = messages.some((message) => {
+    return matchPattern(message, patchWord);
+  });
+  const matchPreReleaseWord = messages.some((message) => {
+    return matchPattern(message, preReleaseWord);
+  });
+
+  if (matchMajorWord) version = 'major';
+  else if (matchMinorWord) version = 'minor';
+  else if (patchWord && matchPatchWord) version = 'patch';
+  else if (preReleaseWord) {
+    if (matchPreReleaseWord) {
+      foundWord = word;
+      preid = foundWord.split('-')[1];
+      version = 'prerelease';
+    }
   }
 
   console.log('version action after first waterfall:', version);
@@ -89,11 +82,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
   // rc-wording is also set
   // and does not include any of rc-wording
   // then unset it and do not run
-  if (
-    version === 'prerelease' &&
-    preReleaseWords &&
-    !messages.some((message) => preReleaseWords.some((word) => new RegExp(word).test(message)))
-  ) {
+  if (version === 'prerelease' && preReleaseWord && !matchPreReleaseWord) {
     version = null;
   }
 
@@ -146,10 +135,10 @@ const workspace = process.env.GITHUB_WORKSPACE;
     newVersion = `${tagPrefix}${newVersion}`;
     if (process.env['INPUT_SKIP-COMMIT'] !== 'true') {
       if (beforeCommits) {
-        for (let commit of beforeCommits) {
-          const commits = commit.split(' ');
-          const args = commits.slice(1);
-          await runInWorkspace(commits[0], args);
+        for (const commit of beforeCommits) {
+          const commitArr = commit.split(' ');
+          const args = commitArr.slice(1);
+          await runInWorkspace(commitArr[0], args);
         }
       }
       await runInWorkspace('git', ['commit', '-a', '-m', commitMessage.replace(/{{version}}/g, newVersion)]);
@@ -170,10 +159,10 @@ const workspace = process.env.GITHUB_WORKSPACE;
       // to support "actions/checkout@v1"
       if (process.env['INPUT_SKIP-COMMIT'] !== 'true') {
         if (beforeCommits) {
-          for (let commit of beforeCommits) {
-            const commits = commit.split(' ');
-            const args = commits.slice(1);
-            await runInWorkspace(commits[0], args);
+          for (const commit of beforeCommits) {
+            const commitArr = commit.split(' ');
+            const args = commitArr.slice(1);
+            await runInWorkspace(commitArr[0], args);
           }
         }
         await runInWorkspace('git', ['commit', '-a', '-m', commitMessage.replace(/{{version}}/g, newVersion)]);
@@ -248,4 +237,24 @@ function runInWorkspace(command, args) {
     });
   });
   //return execa(command, args, { cwd: workspace });
+}
+
+function matchPattern(message, word) {
+  const regex = convertToRegExp(word);
+  return regex.test(message);
+}
+
+function convertToRegExp(text) {
+  if (text.match(/^\/.+\/[gmixXsuUAJ]*$/)) {
+    return regexParser(text);
+  } else return new RegExp(text, 'g');
+}
+
+function regexParser(text) {
+  const m = text.match(/(\/?)(.+)\1([a-z]*)/i);
+  if (m[3] && !/^(?!.*?(.).*?\1)[gmixXsuUAJ]+$/.test(m[3])) {
+    return RegExp(text);
+  } else {
+    return new RegExp(m[2], m[3]);
+  }
 }
