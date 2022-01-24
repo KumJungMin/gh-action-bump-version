@@ -240,6 +240,7 @@ function runInWorkspace(command, args) {
 }
 
 function matchPattern(message, word) {
+  console.log(message);
   const regex = convertToRegExp(word);
   return regex.test(message);
 }
